@@ -73,9 +73,19 @@ bool trySend() {
 
     packetQueued = true;
     teller++;
-    txBuffer[0] = teller & 0xFF;
-    txBuffer[1] = 220;
-    txBuffer[2] = 69;
+    // txBuffer[0] = teller & 0xFF;
+    // txBuffer[1] = 220;
+    // txBuffer[2] = 69;
+    int i = 0;
+    txBuffer[i++] = 0x4b;
+    txBuffer[i++] = 0x49;    
+    txBuffer[i++] = 0x4c;
+    txBuffer[i++] = 0x4c;
+    txBuffer[i++] = 0x20;
+    txBuffer[i++] = 0x4d;
+    txBuffer[i++] = 0x45;
+
+    
     ttn_send(txBuffer, sizeof(txBuffer), LORAWAN_PORT, confirmed);
     return true;
 
