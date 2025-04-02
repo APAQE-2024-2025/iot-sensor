@@ -11,7 +11,8 @@
         "limits": "cpp",
         "sstream": "cpp",
         "system_error": "cpp",
-        "random": "cpp"
+        "random": "cpp",
+        "optional": "cpp"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

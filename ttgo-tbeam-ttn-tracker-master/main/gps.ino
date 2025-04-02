@@ -21,108 +21,73 @@
 
 #include <TinyGPS++.h>
 
-uint32_t LatitudeBinary;
-uint32_t LongitudeBinary;
-uint16_t altitudeGps;
-uint8_t hdopGps;
+uint32_t latitude;
+uint32_t longitude;
+uint16_t altitude;
+uint8_t hdop;
 uint8_t sats;
-char t[32]; // used to sprintf for Serial output
+bool isDataFresh = true;
+unsigned long infoCounter = 0;
 
-TinyGPSPlus _gps;
+TinyGPSPlus gps;
 HardwareSerial _serial_gps(GPS_SERIAL_NUM);
 
-void gps_time(char * buffer, uint8_t size) {
-    snprintf(buffer, size, "%02d:%02d:%02d", _gps.time.hour(), _gps.time.minute(), _gps.time.second());
+void gps_time(char *buffer, uint8_t size)
+{
+    snprintf(buffer, size, "%02d:%02d:%02d", gps.time.hour(), gps.time.minute(), gps.time.second());
 }
 
-float gps_latitude() {
-    return _gps.location.lat();
+void gps_setup()
+{
+    _serial_gps.begin(9600, SERIAL_8N1, 34, 12);
 }
 
-float gps_longitude() {
-    return _gps.location.lng();
-}
-
-float gps_altitude() {
-    return _gps.altitude.meters();
-}
-
-float gps_hdop() {
-    return _gps.hdop.hdop();
-}
-
-uint8_t gps_sats() {
-    return _gps.satellites.value();
-}
-
-void gps_setup() {
-    _serial_gps.begin(GPS_BAUDRATE, SERIAL_8N1, GPS_RX_PIN, GPS_TX_PIN);
-}
-
-static void gps_loop() {
-    while (_serial_gps.available()) {
-        _gps.encode(_serial_gps.read());
-    }
-}
-
-#if defined(PAYLOAD_USE_FULL)
-
-    // More data than PAYLOAD_USE_CAYENNE
-    void buildPacket(uint8_t txBuffer[10])
+void gps_loop()
+{   
+    infoCounter++;
+    while (_serial_gps.available() > 0)
     {
-        LatitudeBinary = ((_gps.location.lat() + 90) / 180.0) * 16777215;
-        LongitudeBinary = ((_gps.location.lng() + 180) / 360.0) * 16777215;
-        altitudeGps = _gps.altitude.meters();
-        hdopGps = _gps.hdop.value() / 10;
-        sats = _gps.satellites.value();
-
-        sprintf(t, "Lat: %f", _gps.location.lat());
-        Serial.println(t);
-        sprintf(t, "Lng: %f", _gps.location.lng());
-        Serial.println(t);
-        sprintf(t, "Alt: %d", altitudeGps);
-        Serial.println(t);
-        sprintf(t, "Hdop: %d", hdopGps);
-        Serial.println(t);
-        sprintf(t, "Sats: %d", sats);
-        Serial.println(t);
-
-        txBuffer[0] = ( LatitudeBinary >> 16 ) & 0xFF;
-        txBuffer[1] = ( LatitudeBinary >> 8 ) & 0xFF;
-        txBuffer[2] = LatitudeBinary & 0xFF;
-        txBuffer[3] = ( LongitudeBinary >> 16 ) & 0xFF;
-        txBuffer[4] = ( LongitudeBinary >> 8 ) & 0xFF;
-        txBuffer[5] = LongitudeBinary & 0xFF;
-        txBuffer[6] = ( altitudeGps >> 8 ) & 0xFF;
-        txBuffer[7] = altitudeGps & 0xFF;
-        txBuffer[8] = hdopGps & 0xFF;
-        txBuffer[9] = sats & 0xFF;
+        if (gps.encode(_serial_gps.read()))
+        {
+            if (gps.location.isUpdated())
+            {
+                isDataFresh = true;
+                latitude = gps.location.lat();
+                longitude = gps.location.lng();
+                sats = gps.satellites.value();
+                hdop = gps.hdop.value();
+                altitude = gps.altitude.meters();
+                Serial.print("Latitude: ");
+                Serial.println(latitude);
+                Serial.print("Longitude: ");
+                Serial.println(longitude);
+                Serial.print("Altitude: ");
+                Serial.println(altitude);
+                Serial.print("hdop: ");
+                Serial.println(hdop);
+                Serial.print("Sats: ");
+                Serial.println(sats);
+            }
+        }
     }
+}
 
-#elif defined(PAYLOAD_USE_CAYENNE)
+bool buildPacket(uint8_t txBuffer[10])
+{
+    if (!isDataFresh || ((latitude | longitude) == 0) ) 
+        return false;
 
-    // CAYENNE DF
-    void buildPacket(uint8_t txBuffer[11])
-    {
-        sprintf(t, "Lat: %f", _gps.location.lat());
-        Serial.println(t);
-        sprintf(t, "Lng: %f", _gps.location.lng());
-        Serial.println(t);        
-        sprintf(t, "Alt: %f", _gps.altitude.meters());
-        Serial.println(t);        
-        int32_t lat = _gps.location.lat() * 10000;
-        int32_t lon = _gps.location.lng() * 10000;
-        int32_t alt = _gps.altitude.meters() * 100;
-        
-        txBuffer[2] = lat >> 16;
-        txBuffer[3] = lat >> 8;
-        txBuffer[4] = lat;
-        txBuffer[5] = lon >> 16;
-        txBuffer[6] = lon >> 8;
-        txBuffer[7] = lon;
-        txBuffer[8] = alt >> 16;
-        txBuffer[9] = alt >> 8;
-        txBuffer[10] = alt;
-    }
-
-#endif
+    int i = 0;
+    txBuffer[i++] = latitude >> 16;
+    txBuffer[i++] = latitude >> 8;
+    txBuffer[i++] = latitude;
+    txBuffer[i++] = longitude >> 16;
+    txBuffer[i++] = longitude >> 8;
+    txBuffer[i++] = longitude;
+    txBuffer[i++] = altitude >> 16;
+    txBuffer[i++] = altitude >> 8;
+    txBuffer[i++] = altitude;
+    txBuffer[i++] = sats;
+    isDataFresh = false;
+    return true;
+}
