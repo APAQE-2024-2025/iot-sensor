@@ -59,7 +59,6 @@ void ttn_register(void (*callback)(uint8_t message));
 // If you are having difficulty sending messages to TTN after the first successful send,
 // uncomment the next option and experiment with values (~ 1 - 5)
 //#define CLOCK_ERROR             5
-
 #define DEBUG_PORT              Serial          // Serial debug port
 #define SERIAL_BAUD             115200          // Serial debug baud rate
 #define SLEEP_BETWEEN_MESSAGES  false           // Do sleep between messages
@@ -73,11 +72,15 @@ void ttn_register(void (*callback)(uint8_t message));
 #define REQUIRE_RADIO           true            // If true, we will fail to start if the radio is not found
 
 // If not defined, we will wait for lock forever
-#define GPS_WAIT_FOR_LOCK       (1000)     // Wait after every boot for GPS lock (may need longer than 5s because we turned the gps off during deep sleep)
+// #define GPS_WAIT_FOR_LOCK       (1000)     // Wait after every boot for GPS lock (may need longer than 5s because we turned the gps off during deep sleep)
 
 // -----------------------------------------------------------------------------
 // DEBUG
 // -----------------------------------------------------------------------------
+
+#if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
+#error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
+#endif
 
 #ifdef DEBUG_PORT
 #define DEBUG_MSG(...) DEBUG_PORT.printf( __VA_ARGS__ )
@@ -107,12 +110,6 @@ void ttn_register(void (*callback)(uint8_t message));
 #elif defined(T_BEAM_V10)
 #define BUTTON_PIN      38
 #endif
-
-// -----------------------------------------------------------------------------
-// OLED
-// -----------------------------------------------------------------------------
-
-#define SSD1306_ADDRESS 0x3C
 
 // -----------------------------------------------------------------------------
 // GPS

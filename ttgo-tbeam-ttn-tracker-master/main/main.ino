@@ -32,14 +32,13 @@ AXP20X_Class axp;
 bool pmu_irq = false;
 String baChStatus = "No charging";
 
-bool ssd1306_found = false;
 bool axp192_found = false;
 
 bool packetSent, packetQueued;
 
 #if defined(PAYLOAD_USE_FULL)
 // includes number of satellites and accuracy
-static uint8_t txBuffer[10];
+static uint8_t txBuffer[11];
 #elif defined(PAYLOAD_USE_CAYENNE)
 // CAYENNE DF
 static uint8_t txBuffer[11] = {0x03, 0x88, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
@@ -66,7 +65,7 @@ bool trySend()
 #if LORAWAN_CONFIRMED_EVERY > 0
     bool confirmed = (ttn_get_count() % LORAWAN_CONFIRMED_EVERY == 0);
     if (confirmed)
-        Serial.println("confirmation enabled");
+        DEBUG_PORT.println("confirmation enabled");
 #else
     bool confirmed = false;
 #endif
@@ -77,13 +76,13 @@ bool trySend()
         return false;
 
     ttn_send(txBuffer, sizeof(txBuffer), LORAWAN_PORT, confirmed);
-    Serial.println("Sending packet...");
+    DEBUG_PORT.println("Sending packet...");
     return true;
 }
 
 void doDeepSleep(uint64_t msecToWake)
 {
-    Serial.printf("Entering deep sleep for %llu seconds\n", msecToWake / 1000);
+    DEBUG_PORT.printf("Entering deep sleep for %llu seconds\n", msecToWake / 1000);
 
     // not using wifi yet, but once we are this is needed to shutoff the radio hw
     // esp_wifi_stop();
@@ -117,20 +116,7 @@ void sleep()
 {
 #if SLEEP_BETWEEN_MESSAGES
 
-    // If the user has a screen, tell them we are about to sleep
-    if (ssd1306_found)
-    {
-        // Show the going to sleep message on the screen
-        char buffer[20];
-        snprintf(buffer, sizeof(buffer), "Sleeping in %3.1fs\n", (MESSAGE_TO_SLEEP_DELAY / 1000.0));
-        screen_print(buffer);
-
-        // Wait for MESSAGE_TO_SLEEP_DELAY millis to sleep
-        delay(MESSAGE_TO_SLEEP_DELAY);
-
-        // Turn off screen
-        screen_off();
-    }
+    
 
     // Set the user button to wake the board
     sleep_interrupt(BUTTON_PIN, LOW);
@@ -154,39 +140,39 @@ void callback(uint8_t message)
     {
         if (ttn_joined)
         {
-            Serial.println("TTN joining...\n");
+            DEBUG_PORT.println("TTN joining...\n");
         }
         else
         {
-            Serial.println("Joined TTN!\n");
+            DEBUG_PORT.println("Joined TTN!\n");
         }
     }
     if (EV_JOIN_FAILED == message)
-        Serial.println("TTN join failed\n");
+        DEBUG_PORT.println("TTN join failed\n");
     if (EV_REJOIN_FAILED == message)
-        Serial.println("TTN rejoin failed\n");
+        DEBUG_PORT.println("TTN rejoin failed\n");
     if (EV_RESET == message)
-        Serial.println("Reset TTN connection\n");
+        DEBUG_PORT.println("Reset TTN connection\n");
     if (EV_LINK_DEAD == message)
-        Serial.println("TTN link dead\n");
+        DEBUG_PORT.println("TTN link dead\n");
     if (EV_ACK == message)
-        Serial.println("ACK received\n");
+        DEBUG_PORT.println("ACK received\n");
     if (EV_PENDING == message)
-        Serial.println("Message discarded\n");
+        DEBUG_PORT.println("Message discarded\n");
     if (EV_QUEUED == message)
-        Serial.println("Message queued\n");
+        DEBUG_PORT.println("Message queued\n");
 
     // We only want to say 'packetSent' for our packets (not packets needed for joining)
     if (EV_TXCOMPLETE == message && packetQueued)
     {
-        Serial.println("Message sent\n");
+        DEBUG_PORT.println("Message sent\n");
         packetQueued = false;
         packetSent = true;
     }
 
     if (EV_RESPONSE == message)
     {
-        Serial.println("[TTN] Response: ");
+        DEBUG_PORT.println("[TTN] Response: ");
 
         size_t len = ttn_response_len();
         uint8_t data[len];
@@ -196,9 +182,9 @@ void callback(uint8_t message)
         for (uint8_t i = 0; i < len; i++)
         {
             snprintf(buffer, sizeof(buffer), "%02X", data[i]);
-            Serial.println(buffer);
+            DEBUG_PORT.println(buffer);
         }
-        Serial.println("\n");
+        DEBUG_PORT.println("\n");
     }
 }
 
@@ -212,36 +198,31 @@ void scanI2Cdevice(void)
         err = Wire.endTransmission();
         if (err == 0)
         {
-            Serial.print("I2C device found at address 0x");
+            DEBUG_PORT.print("I2C device found at address 0x");
             if (addr < 16)
-                Serial.print("0");
-            Serial.print(addr, HEX);
-            Serial.println(" !");
+                DEBUG_PORT.print("0");
+            DEBUG_PORT.print(addr, HEX);
+            DEBUG_PORT.println(" !");
             nDevices++;
 
-            if (addr == SSD1306_ADDRESS)
-            {
-                ssd1306_found = true;
-                Serial.println("ssd1306 display found");
-            }
             if (addr == AXP192_SLAVE_ADDRESS)
             {
                 axp192_found = true;
-                Serial.println("axp192 PMU found");
+                DEBUG_PORT.println("axp192 PMU found");
             }
         }
         else if (err == 4)
         {
-            Serial.print("Unknow error at address 0x");
+            DEBUG_PORT.print("Unknow error at address 0x");
             if (addr < 16)
-                Serial.print("0");
-            Serial.println(addr, HEX);
+                DEBUG_PORT.print("0");
+            DEBUG_PORT.println(addr, HEX);
         }
     }
     if (nDevices == 0)
-        Serial.println("No I2C devices found\n");
+        DEBUG_PORT.println("No I2C devices found\n");
     else
-        Serial.println("done\n");
+        DEBUG_PORT.println("done\n");
 }
 
 /**
@@ -262,20 +243,20 @@ void axp192Init()
     {
         if (!axp.begin(Wire, AXP192_SLAVE_ADDRESS))
         {
-            Serial.println("AXP192 Begin PASS");
+            DEBUG_PORT.println("AXP192 Begin PASS");
         }
         else
         {
-            Serial.println("AXP192 Begin FAIL");
+            DEBUG_PORT.println("AXP192 Begin FAIL");
         }
         // axp.setChgLEDMode(LED_BLINK_4HZ);
-        Serial.printf("DCDC1: %s\n", axp.isDCDC1Enable() ? "ENABLE" : "DISABLE");
-        Serial.printf("DCDC2: %s\n", axp.isDCDC2Enable() ? "ENABLE" : "DISABLE");
-        Serial.printf("LDO2: %s\n", axp.isLDO2Enable() ? "ENABLE" : "DISABLE");
-        Serial.printf("LDO3: %s\n", axp.isLDO3Enable() ? "ENABLE" : "DISABLE");
-        Serial.printf("DCDC3: %s\n", axp.isDCDC3Enable() ? "ENABLE" : "DISABLE");
-        Serial.printf("Exten: %s\n", axp.isExtenEnable() ? "ENABLE" : "DISABLE");
-        Serial.println("----------------------------------------");
+        DEBUG_PORT.printf("DCDC1: %s\n", axp.isDCDC1Enable() ? "ENABLE" : "DISABLE");
+        DEBUG_PORT.printf("DCDC2: %s\n", axp.isDCDC2Enable() ? "ENABLE" : "DISABLE");
+        DEBUG_PORT.printf("LDO2: %s\n", axp.isLDO2Enable() ? "ENABLE" : "DISABLE");
+        DEBUG_PORT.printf("LDO3: %s\n", axp.isLDO3Enable() ? "ENABLE" : "DISABLE");
+        DEBUG_PORT.printf("DCDC3: %s\n", axp.isDCDC3Enable() ? "ENABLE" : "DISABLE");
+        DEBUG_PORT.printf("Exten: %s\n", axp.isExtenEnable() ? "ENABLE" : "DISABLE");
+        DEBUG_PORT.println("----------------------------------------");
 
         axp.setPowerOutPut(AXP192_LDO2, AXP202_ON); // LORA radio
         axp.setPowerOutPut(AXP192_LDO3, AXP202_ON); // GPS main power
@@ -284,12 +265,12 @@ void axp192Init()
         axp.setPowerOutPut(AXP192_DCDC1, AXP202_ON);
         axp.setDCDC1Voltage(3300); // for the OLED power
 
-        Serial.printf("DCDC1: %s\n", axp.isDCDC1Enable() ? "ENABLE" : "DISABLE");
-        Serial.printf("DCDC2: %s\n", axp.isDCDC2Enable() ? "ENABLE" : "DISABLE");
-        Serial.printf("LDO2: %s\n", axp.isLDO2Enable() ? "ENABLE" : "DISABLE");
-        Serial.printf("LDO3: %s\n", axp.isLDO3Enable() ? "ENABLE" : "DISABLE");
-        Serial.printf("DCDC3: %s\n", axp.isDCDC3Enable() ? "ENABLE" : "DISABLE");
-        Serial.printf("Exten: %s\n", axp.isExtenEnable() ? "ENABLE" : "DISABLE");
+        DEBUG_PORT.printf("DCDC1: %s\n", axp.isDCDC1Enable() ? "ENABLE" : "DISABLE");
+        DEBUG_PORT.printf("DCDC2: %s\n", axp.isDCDC2Enable() ? "ENABLE" : "DISABLE");
+        DEBUG_PORT.printf("LDO2: %s\n", axp.isLDO2Enable() ? "ENABLE" : "DISABLE");
+        DEBUG_PORT.printf("LDO3: %s\n", axp.isLDO3Enable() ? "ENABLE" : "DISABLE");
+        DEBUG_PORT.printf("DCDC3: %s\n", axp.isDCDC3Enable() ? "ENABLE" : "DISABLE");
+        DEBUG_PORT.printf("Exten: %s\n", axp.isExtenEnable() ? "ENABLE" : "DISABLE");
 
         pinMode(PMU_IRQ, INPUT_PULLUP);
         attachInterrupt(PMU_IRQ, []
@@ -306,7 +287,7 @@ void axp192Init()
     }
     else
     {
-        Serial.println("AXP192 not found");
+        DEBUG_PORT.println("AXP192 not found");
     }
 }
 
@@ -323,7 +304,7 @@ void initDeepSleep()
         wakeButtons = ((uint64_t)1) << buttons.gpios[0];
     */
 
-    Serial.printf("booted, wake cause %d (boot count %d)\n", wakeCause, bootCount);
+    DEBUG_PORT.printf("booted, wake cause %d (boot count %d)\n", wakeCause, bootCount);
 }
 
 void setup()
@@ -350,10 +331,6 @@ void setup()
     // Hello
     DEBUG_MSG(APP_NAME " " APP_VERSION "\n");
 
-    // Don't init display if we don't have one or we are waking headless due to a timer event
-    if (wakeCause == ESP_SLEEP_WAKEUP_TIMER)
-        ssd1306_found = false; // forget we even have the hardware
-
     // TTN setup
     if (!ttn_setup())
     {
@@ -370,7 +347,7 @@ void setup()
         ttn_join();
         ttn_adr(LORAWAN_ADR);
     }
-    Serial.println("Setup finished!");
+    DEBUG_PORT.println("Setup finished!");
 }
 
 void loop()
@@ -390,7 +367,7 @@ void loop()
         if (!wasPressed)
         {
             // just started a new press
-            Serial.println("pressing");
+            DEBUG_PORT.println("pressing");
             wasPressed = true;
             minPressMs = millis() + 3000;
         }
@@ -403,11 +380,11 @@ void loop()
         {
 // held long enough
 #ifndef PREFS_DISCARD
-            Serial.println("Discarding prefs disabled\n");
+            DEBUG_PORT.println("Discarding prefs disabled\n");
 #endif
 
 #ifdef PREFS_DISCARD
-            Serial.println("Discarding prefs!\n");
+            DEBUG_PORT.println("Discarding prefs!\n");
             ttn_erase_prefs();
             delay(5000); // Give some time to read the screen
             ESP.restart();
@@ -426,7 +403,7 @@ void loop()
         {
             last = millis();
             first = false;
-            Serial.println("TRANSMITTED");
+            DEBUG_PORT.println("TRANSMITTED");
         }
         
     }

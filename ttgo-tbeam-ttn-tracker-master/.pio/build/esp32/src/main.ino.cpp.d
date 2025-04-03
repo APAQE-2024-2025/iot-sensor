@@ -157,6 +157,8 @@
  C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src/Wire.h \
  C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal.h \
  .pio/libdeps/esp32/AXP202X_Library/src/axp20x.h \
+ .pio/libdeps/esp32/TimerOne/TimerOne.h \
+ C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-timer.h \
  .pio/libdeps/esp32/MCCI\ LoRaWAN\ LMIC\ library/src/hal/hal.h \
  .pio/libdeps/esp32/MCCI\ LoRaWAN\ LMIC\ library/src/arduino_lmic_hal_configuration.h \
  .pio/libdeps/esp32/MCCI\ LoRaWAN\ LMIC\ library/src/lmic/lmic_env.h \

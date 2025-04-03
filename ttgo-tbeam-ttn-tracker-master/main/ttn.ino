@@ -112,8 +112,8 @@ void gen_lora_deveui(uint8_t *pdeveui) {
 static void printHex2(unsigned v) {
     v &= 0xff;
     if (v < 16)
-        Serial.print('0');
-    Serial.print(v, HEX);
+        DEBUG_PORT.print('0');
+    DEBUG_PORT.print(v, HEX);
 }
 
 #ifdef USE_OTAA
@@ -126,13 +126,13 @@ static void printHex2(unsigned v) {
         if(needInit)
             gen_lora_deveui(DEVEUI);
 
-        Serial.print("DevEUI: ");
+        DEBUG_PORT.print("DevEUI: ");
         for(int i = 0; i < sizeof(DEVEUI); i++) {
             if (i != 0)
-                    Serial.print("-");
+                    DEBUG_PORT.print("-");
             printHex2(DEVEUI[i]);
         }
-        Serial.println();
+        DEBUG_PORT.println();
     }
 #endif
 
@@ -151,31 +151,31 @@ void onEvent(ev_t event) {
             LMIC_setLinkCheckMode(0); // Link check problematic if not using ADR. Must be set after join
         }
 
-        Serial.println(F("EV_JOINED"));
+        DEBUG_PORT.println(F("EV_JOINED"));
 
         u4_t netid = 0;
         devaddr_t devaddr = 0;
         u1_t nwkKey[16];
         u1_t artKey[16];
         LMIC_getSessionKeys(&netid, &devaddr, nwkKey, artKey);
-        Serial.print("netid: ");
-        Serial.println(netid, DEC);
-        Serial.print("devaddr: ");
-        Serial.println(devaddr, HEX);
-        Serial.print("AppSKey: ");
+        DEBUG_PORT.print("netid: ");
+        DEBUG_PORT.println(netid, DEC);
+        DEBUG_PORT.print("devaddr: ");
+        DEBUG_PORT.println(devaddr, HEX);
+        DEBUG_PORT.print("AppSKey: ");
         for (size_t i=0; i<sizeof(artKey); ++i) {
             if (i != 0)
-                Serial.print("-");
+                DEBUG_PORT.print("-");
             printHex2(artKey[i]);
         }
-        Serial.println("");
-        Serial.print("NwkSKey: ");
+        DEBUG_PORT.println("");
+        DEBUG_PORT.print("NwkSKey: ");
         for (size_t i=0; i<sizeof(nwkKey); ++i) {
             if (i != 0)
-                    Serial.print("-");
+                    DEBUG_PORT.print("-");
             printHex2(nwkKey[i]);
         }
-        Serial.println();
+        DEBUG_PORT.println();
 
         Preferences p;
         if(p.begin("lora", false)) {
@@ -187,15 +187,15 @@ void onEvent(ev_t event) {
         }
         break; }
     case EV_TXCOMPLETE:
-        Serial.println(F("EV_TXCOMPLETE (inc. RX win. wait)"));
+        DEBUG_PORT.println(F("EV_TXCOMPLETE (inc. RX win. wait)"));
         if (LMIC.txrxFlags & TXRX_ACK) {
-            Serial.println(F("Received ack"));
+            DEBUG_PORT.println(F("Received ack"));
             _ttn_callback(EV_ACK);
         }
         if (LMIC.dataLen) {
-            Serial.print(F("Data Received: "));
-            Serial.write(LMIC.frame+LMIC.dataBeg, LMIC.dataLen);
-            Serial.println();
+            DEBUG_PORT.print(F("Data Received: "));
+            DEBUG_PORT.write(LMIC.frame+LMIC.dataBeg, LMIC.dataLen);
+            DEBUG_PORT.println();
             _ttn_callback(EV_RESPONSE);
         }
         break;
@@ -355,11 +355,11 @@ void ttn_join() {
             // We have not yet joined a network, start a full join attempt
             // Make LMiC initialize the default channels, choose a channel, and
             // schedule the OTAA join
-            Serial.println("No session saved, joining from scratch");
+            DEBUG_PORT.println("No session saved, joining from scratch");
             LMIC_startJoining();
         }
         else {
-            Serial.println("Rejoining saved session");
+            DEBUG_PORT.println("Rejoining saved session");
             LMIC_setSession(netId, devAddr, nwkKey, artKey);
 
             // Trigger a false joined
@@ -393,25 +393,25 @@ static void ttn_set_cnt() {
     if(now < lastWriteMsec || (now - lastWriteMsec) > 5 * 60 * 1000L) { // write if we roll over (50 days) or 5 mins
         lastWriteMsec = now;
         Preferences p;
-        Serial.println("starting prefs");
+        DEBUG_PORT.println("starting prefs");
         if(p.begin("lora", false)) {
-          Serial.println("starting prefs SUCCESS, writing data");
+          DEBUG_PORT.println("starting prefs SUCCESS, writing data");
             p.putUInt("count", count);
-            Serial.println("done");
+            DEBUG_PORT.println("done");
             p.end();
-            Serial.println("committed data");
+            DEBUG_PORT.println("committed data");
         }
-        else {Serial.println("prefs init FAILED");}
+        else {DEBUG_PORT.println("prefs init FAILED");}
     }
 }
 
 /// Blow away our prefs (i.e. to rejoin from scratch)
 void ttn_erase_prefs() {
-    Serial.println("started erasing prefs");
+    DEBUG_PORT.println("started erasing prefs");
     Preferences p;
     if(p.begin("lora", false)) {
         p.clear();
-        Serial.println("prefs erased");
+        DEBUG_PORT.println("prefs erased");
         p.end();
     }
 }

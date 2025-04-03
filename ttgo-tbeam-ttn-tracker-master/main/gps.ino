@@ -20,6 +20,10 @@
 */
 
 #include <TinyGPS++.h>
+#include <TimerOne.h>
+
+#define NO_CONNECTION_PRINT_COUNT 200000
+#define GPS_POLL_INTERVAL 3000
 
 uint32_t latitude;
 uint32_t longitude;
@@ -27,7 +31,10 @@ uint16_t altitude;
 uint8_t hdop;
 uint8_t sats;
 bool isDataFresh = true;
-unsigned long infoCounter = 0;
+// unsigned long noConnectionCounter = 0;
+long lastGPSCheck = 0;
+long gpsCheckDeltaCounter = 0;
+volatile bool allowGPSPoll = false;
 
 TinyGPSPlus gps;
 HardwareSerial _serial_gps(GPS_SERIAL_NUM);
@@ -40,42 +47,61 @@ void gps_time(char *buffer, uint8_t size)
 void gps_setup()
 {
     _serial_gps.begin(9600, SERIAL_8N1, 34, 12);
+    Timer1.initialize(GPS_POLL_INTERVAL * 1000);
+    Timer1.attachInterrupt(pollGPS); 
 }
 
 void gps_loop()
-{   
-    infoCounter++;
-    while (_serial_gps.available() > 0)
+{
+    if (allowGPSPoll)
     {
-        if (gps.encode(_serial_gps.read()))
+        allowGPSPoll = false;
+        if (_serial_gps.available() > 0)
         {
-            if (gps.location.isUpdated())
+            while (_serial_gps.available() > 0)
             {
-                isDataFresh = true;
-                latitude = gps.location.lat();
-                longitude = gps.location.lng();
-                sats = gps.satellites.value();
-                hdop = gps.hdop.value();
-                altitude = gps.altitude.meters();
-                Serial.print("Latitude: ");
-                Serial.println(latitude);
-                Serial.print("Longitude: ");
-                Serial.println(longitude);
-                Serial.print("Altitude: ");
-                Serial.println(altitude);
-                Serial.print("hdop: ");
-                Serial.println(hdop);
-                Serial.print("Sats: ");
-                Serial.println(sats);
+                if (gps.encode(_serial_gps.read()))
+                {
+                    if (gps.location.isUpdated())
+                    {     
+                        //noConnectionCounter = 0;
+                        isDataFresh = true;
+                        latitude = gps.location.lat();
+                        longitude = gps.location.lng();
+                        sats = gps.satellites.value();
+                        hdop = gps.hdop.value();
+                        altitude = gps.altitude.meters();
+                        DEBUG_PORT.print("Latitude: ");
+                        DEBUG_PORT.println(latitude);
+                        DEBUG_PORT.print("Longitude: ");
+                        DEBUG_PORT.println(longitude);
+                        DEBUG_PORT.print("Altitude: ");
+                        DEBUG_PORT.println(altitude);
+                        DEBUG_PORT.print("hdop: ");
+                        DEBUG_PORT.println(hdop);
+                        DEBUG_PORT.print("Sats: ");
+                        DEBUG_PORT.println(sats);
+                    }
+                }
             }
         }
+        else
+            DEBUG_PORT.println("NO GPS LOCK. Refusing send.");
     }
+}
+
+void pollGPS()
+{
+    allowGPSPoll = true;
 }
 
 bool buildPacket(uint8_t txBuffer[10])
 {
-    if (!isDataFresh || ((latitude | longitude) == 0) ) 
+    bool ironiousData =  ((latitude | longitude) == 0);
+    if (!isDataFresh || ironiousData)
         return false;
+    else if (ironiousData)
+        DEBUG_PORT.println("Stale/ironious GPS data. Aborting send.");
 
     int i = 0;
     txBuffer[i++] = latitude >> 16;
@@ -88,6 +114,7 @@ bool buildPacket(uint8_t txBuffer[10])
     txBuffer[i++] = altitude >> 8;
     txBuffer[i++] = altitude;
     txBuffer[i++] = sats;
+    txBuffer[i++] = (char)'t';
     isDataFresh = false;
     return true;
 }

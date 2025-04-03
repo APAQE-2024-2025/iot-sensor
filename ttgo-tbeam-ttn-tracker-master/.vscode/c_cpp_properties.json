@@ -10,9 +10,10 @@
             "includePath": [
                 "C:/Users/mathi/OneDrive/School/2024-2025/projDarAQ/iot-sensor/ttgo-tbeam-ttn-tracker-master/main",
                 "C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/libraries/Preferences/src",
+                "C:/Users/mathi/OneDrive/School/2024-2025/projDarAQ/iot-sensor/ttgo-tbeam-ttn-tracker-master/.pio/libdeps/esp32/TimerOne",
                 "C:/Users/mathi/OneDrive/School/2024-2025/projDarAQ/iot-sensor/ttgo-tbeam-ttn-tracker-master/.pio/libdeps/esp32/AXP202X_Library/src",
-                "C:/Users/mathi/OneDrive/School/2024-2025/projDarAQ/iot-sensor/ttgo-tbeam-ttn-tracker-master/.pio/libdeps/esp32/ESP8266 and ESP32 OLED driver for SSD1306 displays/src",
                 "C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src",
+                "C:/Users/mathi/OneDrive/School/2024-2025/projDarAQ/iot-sensor/ttgo-tbeam-ttn-tracker-master/.pio/libdeps/esp32/ESP8266 and ESP32 OLED driver for SSD1306 displays/src",
                 "C:/Users/mathi/OneDrive/School/2024-2025/projDarAQ/iot-sensor/ttgo-tbeam-ttn-tracker-master/.pio/libdeps/esp32/TinyGPSPlus/src",
                 "C:/Users/mathi/OneDrive/School/2024-2025/projDarAQ/iot-sensor/ttgo-tbeam-ttn-tracker-master/.pio/libdeps/esp32/MCCI LoRaWAN LMIC library/src",
                 "C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/libraries/SPI/src",
@@ -249,9 +250,10 @@
                 "path": [
                     "C:/Users/mathi/OneDrive/School/2024-2025/projDarAQ/iot-sensor/ttgo-tbeam-ttn-tracker-master/main",
                     "C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/libraries/Preferences/src",
+                    "C:/Users/mathi/OneDrive/School/2024-2025/projDarAQ/iot-sensor/ttgo-tbeam-ttn-tracker-master/.pio/libdeps/esp32/TimerOne",
                     "C:/Users/mathi/OneDrive/School/2024-2025/projDarAQ/iot-sensor/ttgo-tbeam-ttn-tracker-master/.pio/libdeps/esp32/AXP202X_Library/src",
-                    "C:/Users/mathi/OneDrive/School/2024-2025/projDarAQ/iot-sensor/ttgo-tbeam-ttn-tracker-master/.pio/libdeps/esp32/ESP8266 and ESP32 OLED driver for SSD1306 displays/src",
                     "C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src",
+                    "C:/Users/mathi/OneDrive/School/2024-2025/projDarAQ/iot-sensor/ttgo-tbeam-ttn-tracker-master/.pio/libdeps/esp32/ESP8266 and ESP32 OLED driver for SSD1306 displays/src",
                     "C:/Users/mathi/OneDrive/School/2024-2025/projDarAQ/iot-sensor/ttgo-tbeam-ttn-tracker-master/.pio/libdeps/esp32/TinyGPSPlus/src",
                     "C:/Users/mathi/OneDrive/School/2024-2025/projDarAQ/iot-sensor/ttgo-tbeam-ttn-tracker-master/.pio/libdeps/esp32/MCCI LoRaWAN LMIC library/src",
                     "C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/libraries/SPI/src",
