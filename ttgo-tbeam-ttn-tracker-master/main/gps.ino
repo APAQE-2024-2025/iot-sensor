@@ -25,12 +25,13 @@
 #define NO_CONNECTION_PRINT_COUNT 200000
 #define GPS_POLL_INTERVAL 3000
 
+bool isDataFresh = true;
 uint32_t latitude;
 uint32_t longitude;
-uint16_t altitude;
+uint32_t altitude;
 uint8_t hdop;
 uint8_t sats;
-bool isDataFresh = true;
+
 // unsigned long noConnectionCounter = 0;
 long lastGPSCheck = 0;
 long gpsCheckDeltaCounter = 0;
@@ -46,9 +47,11 @@ void gps_time(char *buffer, uint8_t size)
 
 void gps_setup()
 {
+#if !DUMMY_DATA
     _serial_gps.begin(9600, SERIAL_8N1, 34, 12);
+#endif
     Timer1.initialize(GPS_POLL_INTERVAL * 1000);
-    Timer1.attachInterrupt(pollGPS); 
+    Timer1.attachInterrupt(pollGPS);
 }
 
 void gps_loop()
@@ -63,8 +66,8 @@ void gps_loop()
                 if (gps.encode(_serial_gps.read()))
                 {
                     if (gps.location.isUpdated())
-                    {     
-                        //noConnectionCounter = 0;
+                    {
+                        // noConnectionCounter = 0;
                         isDataFresh = true;
                         latitude = gps.location.lat();
                         longitude = gps.location.lng();
@@ -92,18 +95,21 @@ void gps_loop()
 
 void pollGPS()
 {
+#if !DUMMY_DATA
     allowGPSPoll = true;
+#endif
 }
 
-bool buildPacket(uint8_t txBuffer[10])
+bool buildPacket(uint8_t* txBuffer)
 {
-    bool ironiousData =  ((latitude | longitude) == 0);
+    int i = 0;
+#if !DUMMY_DATA
+    bool ironiousData = ((latitude | longitude) == 0);
     if (!isDataFresh || ironiousData)
         return false;
     else if (ironiousData)
         DEBUG_PORT.println("Stale/ironious GPS data. Aborting send.");
 
-    int i = 0;
     txBuffer[i++] = latitude >> 16;
     txBuffer[i++] = latitude >> 8;
     txBuffer[i++] = latitude;
@@ -115,6 +121,11 @@ bool buildPacket(uint8_t txBuffer[10])
     txBuffer[i++] = altitude;
     txBuffer[i++] = sats;
     txBuffer[i++] = (char)'t';
+#else
+    DEBUG_PORT.println("DEBUG: Generating packet!");
+    for(; i < sizeof(txBuffer); i++)
+        txBuffer[i] = i;
+#endif
     isDataFresh = false;
     return true;
 }

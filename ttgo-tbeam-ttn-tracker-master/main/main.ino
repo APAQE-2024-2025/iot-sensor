@@ -25,14 +25,6 @@
 #include "configuration.h"
 #include "rom/rtc.h"
 #include <TinyGPS++.h>
-#include <Wire.h>
-
-#include "axp20x.h"
-AXP20X_Class axp;
-bool pmu_irq = false;
-String baChStatus = "No charging";
-
-bool axp192_found = false;
 
 bool packetSent, packetQueued;
 
@@ -60,7 +52,7 @@ esp_sleep_source_t wakeCause; // the reason we booted this time
  */
 bool trySend()
 {
-        packetSent = false;
+    packetSent = false;
 
 #if LORAWAN_CONFIRMED_EVERY > 0
     bool confirmed = (ttn_get_count() % LORAWAN_CONFIRMED_EVERY == 0);
@@ -89,13 +81,6 @@ void doDeepSleep(uint64_t msecToWake)
 
     LMIC_shutdown(); // cleanly shutdown the radio
 
-    if (axp192_found)
-    {
-        // turn on after initial testing with real hardware
-        axp.setPowerOutPut(AXP192_LDO2, AXP202_OFF); // LORA radio
-        axp.setPowerOutPut(AXP192_LDO3, AXP202_OFF); // GPS main power
-    }
-
     // FIXME - use an external 10k pulldown so we can leave the RTC peripherals powered off
     // until then we need the following lines
     esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
@@ -115,8 +100,6 @@ void doDeepSleep(uint64_t msecToWake)
 void sleep()
 {
 #if SLEEP_BETWEEN_MESSAGES
-
-    
 
     // Set the user button to wake the board
     sleep_interrupt(BUTTON_PIN, LOW);
@@ -188,109 +171,6 @@ void callback(uint8_t message)
     }
 }
 
-void scanI2Cdevice(void)
-{
-    byte err, addr;
-    int nDevices = 0;
-    for (addr = 1; addr < 127; addr++)
-    {
-        Wire.beginTransmission(addr);
-        err = Wire.endTransmission();
-        if (err == 0)
-        {
-            DEBUG_PORT.print("I2C device found at address 0x");
-            if (addr < 16)
-                DEBUG_PORT.print("0");
-            DEBUG_PORT.print(addr, HEX);
-            DEBUG_PORT.println(" !");
-            nDevices++;
-
-            if (addr == AXP192_SLAVE_ADDRESS)
-            {
-                axp192_found = true;
-                DEBUG_PORT.println("axp192 PMU found");
-            }
-        }
-        else if (err == 4)
-        {
-            DEBUG_PORT.print("Unknow error at address 0x");
-            if (addr < 16)
-                DEBUG_PORT.print("0");
-            DEBUG_PORT.println(addr, HEX);
-        }
-    }
-    if (nDevices == 0)
-        DEBUG_PORT.println("No I2C devices found\n");
-    else
-        DEBUG_PORT.println("done\n");
-}
-
-/**
- * Init the power manager chip
- *
- * axp192 power
-    DCDC1 0.7-3.5V @ 1200mA max -> OLED  // If you turn this off you'll lose comms to the axp192 because the OLED and the axp192 share the same i2c bus, instead use ssd1306 sleep mode
-    DCDC2 -> unused
-    DCDC3 0.7-3.5V @ 700mA max -> ESP32 (keep this on!)
-    LDO1 30mA -> charges GPS backup battery  // charges the tiny J13 battery by the GPS to power the GPS ram (for a couple of days), can not be turned off
-    LDO2 200mA -> LORA
-    LDO3 200mA -> GPS
- */
-
-void axp192Init()
-{
-    if (axp192_found)
-    {
-        if (!axp.begin(Wire, AXP192_SLAVE_ADDRESS))
-        {
-            DEBUG_PORT.println("AXP192 Begin PASS");
-        }
-        else
-        {
-            DEBUG_PORT.println("AXP192 Begin FAIL");
-        }
-        // axp.setChgLEDMode(LED_BLINK_4HZ);
-        DEBUG_PORT.printf("DCDC1: %s\n", axp.isDCDC1Enable() ? "ENABLE" : "DISABLE");
-        DEBUG_PORT.printf("DCDC2: %s\n", axp.isDCDC2Enable() ? "ENABLE" : "DISABLE");
-        DEBUG_PORT.printf("LDO2: %s\n", axp.isLDO2Enable() ? "ENABLE" : "DISABLE");
-        DEBUG_PORT.printf("LDO3: %s\n", axp.isLDO3Enable() ? "ENABLE" : "DISABLE");
-        DEBUG_PORT.printf("DCDC3: %s\n", axp.isDCDC3Enable() ? "ENABLE" : "DISABLE");
-        DEBUG_PORT.printf("Exten: %s\n", axp.isExtenEnable() ? "ENABLE" : "DISABLE");
-        DEBUG_PORT.println("----------------------------------------");
-
-        axp.setPowerOutPut(AXP192_LDO2, AXP202_ON); // LORA radio
-        axp.setPowerOutPut(AXP192_LDO3, AXP202_ON); // GPS main power
-        axp.setPowerOutPut(AXP192_DCDC2, AXP202_ON);
-        axp.setPowerOutPut(AXP192_EXTEN, AXP202_ON);
-        axp.setPowerOutPut(AXP192_DCDC1, AXP202_ON);
-        axp.setDCDC1Voltage(3300); // for the OLED power
-
-        DEBUG_PORT.printf("DCDC1: %s\n", axp.isDCDC1Enable() ? "ENABLE" : "DISABLE");
-        DEBUG_PORT.printf("DCDC2: %s\n", axp.isDCDC2Enable() ? "ENABLE" : "DISABLE");
-        DEBUG_PORT.printf("LDO2: %s\n", axp.isLDO2Enable() ? "ENABLE" : "DISABLE");
-        DEBUG_PORT.printf("LDO3: %s\n", axp.isLDO3Enable() ? "ENABLE" : "DISABLE");
-        DEBUG_PORT.printf("DCDC3: %s\n", axp.isDCDC3Enable() ? "ENABLE" : "DISABLE");
-        DEBUG_PORT.printf("Exten: %s\n", axp.isExtenEnable() ? "ENABLE" : "DISABLE");
-
-        pinMode(PMU_IRQ, INPUT_PULLUP);
-        attachInterrupt(PMU_IRQ, []
-                        { pmu_irq = true; }, FALLING);
-
-        axp.adc1Enable(AXP202_BATT_CUR_ADC1, 1);
-        axp.enableIRQ(AXP202_VBUS_REMOVED_IRQ | AXP202_VBUS_CONNECT_IRQ | AXP202_BATT_REMOVED_IRQ | AXP202_BATT_CONNECT_IRQ, 1);
-        axp.clearIRQ();
-
-        if (axp.isCharging())
-        {
-            baChStatus = "Charging";
-        }
-    }
-    else
-    {
-        DEBUG_PORT.println("AXP192 not found");
-    }
-}
-
 // Perform power on init that we do on each wake from deep sleep
 void initDeepSleep()
 {
@@ -316,11 +196,6 @@ void setup()
 #endif
 
     initDeepSleep();
-
-    Wire.begin(I2C_SDA, I2C_SCL);
-    scanI2Cdevice();
-    axp192Init();
-
     // Buttons & LED
     pinMode(BUTTON_PIN, INPUT_PULLUP);
 
@@ -328,12 +203,12 @@ void setup()
     pinMode(LED_PIN, OUTPUT);
 #endif
 
-    // Hello
     DEBUG_MSG(APP_NAME " " APP_VERSION "\n");
+    DEBUG_PORT.println("Init TTN...");
 
-    // TTN setup
     if (!ttn_setup())
     {
+        DEBUG_PORT.println("lora not found");
         if (REQUIRE_RADIO)
         {
             delay(MESSAGE_TO_SLEEP_DELAY);
@@ -342,10 +217,13 @@ void setup()
     }
     else
     {
+        DEBUG_PORT.println("ttn setup successful");
         gps_setup();
         ttn_register(callback);
+        DEBUG_PORT.println("Joining TTN");
         ttn_join();
         ttn_adr(LORAWAN_ADR);
+        DEBUG_PORT.println("Done!");
     }
     DEBUG_PORT.println("Setup finished!");
 }
@@ -357,10 +235,11 @@ void loop()
     {
         packetSent = false;
         sleep();
+        DEBUG_PORT.println("sleep");
     }
 
     // if user presses button for more than 3 secs, discard our network prefs and reboot (FIXME, use a debounce lib instead of this boilerplate)
-    static bool wasPressed = false;
+ /*   static bool wasPressed = false;
     static uint32_t minPressMs; // what tick should we call this press long enough
     if (!digitalRead(BUTTON_PIN))
     {
@@ -390,7 +269,7 @@ void loop()
             ESP.restart();
 #endif
         }
-    }
+    }*/
 
     gps_loop();
 
@@ -405,6 +284,5 @@ void loop()
             first = false;
             DEBUG_PORT.println("TRANSMITTED");
         }
-        
     }
 }
