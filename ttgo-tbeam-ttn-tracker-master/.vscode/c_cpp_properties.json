@@ -10,9 +10,9 @@
             "includePath": [
                 "C:/Users/mathi/OneDrive/School/2024-2025/projDarAQ/iot-sensor/ttgo-tbeam-ttn-tracker-master/main",
                 "C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/libraries/Preferences/src",
-                "C:/Users/mathi/OneDrive/School/2024-2025/projDarAQ/iot-sensor/ttgo-tbeam-ttn-tracker-master/.pio/libdeps/firebeetle32/TimerOne",
-                "C:/Users/mathi/OneDrive/School/2024-2025/projDarAQ/iot-sensor/ttgo-tbeam-ttn-tracker-master/.pio/libdeps/firebeetle32/TinyGPSPlus/src",
-                "C:/Users/mathi/OneDrive/School/2024-2025/projDarAQ/iot-sensor/ttgo-tbeam-ttn-tracker-master/.pio/libdeps/firebeetle32/MCCI LoRaWAN LMIC library/src",
+                "C:/Users/mathi/OneDrive/School/2024-2025/projDarAQ/iot-sensor/ttgo-tbeam-ttn-tracker-master/.pio/libdeps/esp32/TimerOne",
+                "C:/Users/mathi/OneDrive/School/2024-2025/projDarAQ/iot-sensor/ttgo-tbeam-ttn-tracker-master/.pio/libdeps/esp32/TinyGPSPlus/src",
+                "C:/Users/mathi/OneDrive/School/2024-2025/projDarAQ/iot-sensor/ttgo-tbeam-ttn-tracker-master/.pio/libdeps/esp32/MCCI LoRaWAN LMIC library/src",
                 "C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/libraries/SPI/src",
                 "C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/newlib/platform_include",
                 "C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/freertos/include",
@@ -209,7 +209,7 @@
                 "C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/fb_gfx/include",
                 "C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/dio_qspi/include",
                 "C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/cores/esp32",
-                "C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/variants/firebeetle32",
+                "C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/variants/tbeam",
                 "C:/Users/mathi/OneDrive/School/2024-2025/projDarAQ/iot-sensor/ttgo-tbeam-ttn-tracker-master/lib/TTNNode",
                 "C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/libraries/ArduinoOTA/src",
                 "C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/libraries/AsyncUDP/src",
@@ -249,9 +249,9 @@
                 "path": [
                     "C:/Users/mathi/OneDrive/School/2024-2025/projDarAQ/iot-sensor/ttgo-tbeam-ttn-tracker-master/main",
                     "C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/libraries/Preferences/src",
-                    "C:/Users/mathi/OneDrive/School/2024-2025/projDarAQ/iot-sensor/ttgo-tbeam-ttn-tracker-master/.pio/libdeps/firebeetle32/TimerOne",
-                    "C:/Users/mathi/OneDrive/School/2024-2025/projDarAQ/iot-sensor/ttgo-tbeam-ttn-tracker-master/.pio/libdeps/firebeetle32/TinyGPSPlus/src",
-                    "C:/Users/mathi/OneDrive/School/2024-2025/projDarAQ/iot-sensor/ttgo-tbeam-ttn-tracker-master/.pio/libdeps/firebeetle32/MCCI LoRaWAN LMIC library/src",
+                    "C:/Users/mathi/OneDrive/School/2024-2025/projDarAQ/iot-sensor/ttgo-tbeam-ttn-tracker-master/.pio/libdeps/esp32/TimerOne",
+                    "C:/Users/mathi/OneDrive/School/2024-2025/projDarAQ/iot-sensor/ttgo-tbeam-ttn-tracker-master/.pio/libdeps/esp32/TinyGPSPlus/src",
+                    "C:/Users/mathi/OneDrive/School/2024-2025/projDarAQ/iot-sensor/ttgo-tbeam-ttn-tracker-master/.pio/libdeps/esp32/MCCI LoRaWAN LMIC library/src",
                     "C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/libraries/SPI/src",
                     "C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/newlib/platform_include",
                     "C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/freertos/include",
@@ -448,7 +448,7 @@
                     "C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/fb_gfx/include",
                     "C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/dio_qspi/include",
                     "C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/cores/esp32",
-                    "C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/variants/firebeetle32",
+                    "C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/variants/tbeam",
                     "C:/Users/mathi/OneDrive/School/2024-2025/projDarAQ/iot-sensor/ttgo-tbeam-ttn-tracker-master/lib/TTNNode",
                     "C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/libraries/ArduinoOTA/src",
                     "C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/libraries/AsyncUDP/src",
@@ -486,7 +486,8 @@
             },
             "defines": [
                 "PLATFORMIO=60118",
-                "ARDUINO_ESP32_DEV",
+                "ARDUINO_T_Beam",
+                "BOARD_HAS_PSRAM",
                 "hal_init=LMICHAL_init",
                 "ARDUINO_LMIC_PROJECT_CONFIG_H_SUPPRESS",
                 "CFG_sx1276_radio=1",
@@ -503,8 +504,8 @@
                 "ESP32",
                 "F_CPU=240000000L",
                 "ARDUINO=10812",
-                "ARDUINO_VARIANT=\"firebeetle32\"",
-                "ARDUINO_BOARD=\"FireBeetle-ESP32\"",
+                "ARDUINO_VARIANT=\"tbeam\"",
+                "ARDUINO_BOARD=\"TTGO T-Beam\"",
                 "ARDUINO_PARTITION_default",
                 ""
             ],
@@ -512,6 +513,7 @@
             "cppStandard": "gnu++11",
             "compilerPath": "C:/Users/mathi/.platformio/packages/toolchain-xtensa-esp32/bin/xtensa-esp32-elf-gcc.exe",
             "compilerArgs": [
+                "-mfix-esp32-psram-cache-issue",
                 "-mlongcalls",
                 ""
             ]

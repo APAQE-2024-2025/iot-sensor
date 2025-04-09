@@ -64,7 +64,6 @@ void ttn_register(void (*callback)(uint8_t message));
 #define SLEEP_BETWEEN_MESSAGES false // Do sleep between messages
 #define SEND_INTERVAL (1000)         // Sleep for these many millis
 #define MESSAGE_TO_SLEEP_DELAY 5000  // Time after message before going to sleep
-#define LOGO_DELAY 500               // Time to show logo on first boot
 #define LORAWAN_PORT 10              // Port the messages will be sent to
 #define LORAWAN_CONFIRMED_EVERY 0    // Send confirmed message every these many messages (0 means never)
 #define LORAWAN_SF DR_SF7            // Spreading factor (recommended DR_SF7 for ttn network map purposes, DR_SF10 works for slow moving trackers)
@@ -129,20 +128,42 @@ void ttn_register(void (*callback)(uint8_t message));
 // LoRa SPI
 // -----------------------------------------------------------------------------
 
-// #define SCK_GPIO 5
-// #define MISO_GPIO 19
-// #define MOSI_GPIO 27
-// #define NSS_GPIO 18
-// #define RESET_GPIO 14
-// #define DIO0_GPIO 26
-// #define DIO1_GPIO 33 // Note: not really used on this board
-// #define DIO2_GPIO 32 // Note: not really used on this board
-
-#define SCK_GPIO 18
+#define SCK_GPIO 5
 #define MISO_GPIO 19
-#define MOSI_GPIO 23
-#define NSS_GPIO D5
-#define RESET_GPIO D4
-#define DIO0_GPIO D2
-#define DIO1_GPIO 16
-#define DIO2_GPIO LMIC_UNUSED_PIN // Note: not really used on this board
+#define MOSI_GPIO 27
+#define NSS_GPIO 18
+#define RESET_GPIO 14
+#define DIO0_GPIO 26
+#define DIO1_GPIO 33 // Note: not really used on this board
+#define DIO2_GPIO 32 // Note: not really used on this board
+
+// #define SCK_GPIO 18
+// #define MISO_GPIO 19
+// #define MOSI_GPIO 23
+// #define NSS_GPIO D3
+// #define RESET_GPIO D4
+// #define DIO0_GPIO D2
+// #define DIO1_GPIO D5
+// #define DIO2_GPIO LMIC_UNUSED_PIN // Note: not really used on this board
+
+// -----------------------------------------------------------------------------
+// Payload data
+// -----------------------------------------------------------------------------
+
+struct PayloadData
+{
+    // float longitude;
+    // float latitude;
+    // float altitude;
+    // float hdop;
+    // uint8_t satellites;
+    // uint64_t PeePeePooPooTest = 69;
+
+    float temperature;
+    float pressure;
+    float humidity;
+    float gasResistance;
+    float altitude;
+    float phValue;
+    float doValue;
+};

@@ -23,18 +23,12 @@
 */
 
 #include "configuration.h"
-#include "rom/rtc.h"
+// #include "rom/rtc.h"
 #include <TinyGPS++.h>
 
 bool packetSent, packetQueued;
 
-#if defined(PAYLOAD_USE_FULL)
-// includes number of satellites and accuracy
-static uint8_t txBuffer[11];
-#elif defined(PAYLOAD_USE_CAYENNE)
-// CAYENNE DF
-static uint8_t txBuffer[11] = {0x03, 0x88, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-#endif
+static uint8_t txBuffer[sizeof(PayloadData)];
 
 // deep sleep support
 RTC_DATA_ATTR int bootCount = 0;
@@ -63,11 +57,25 @@ bool trySend()
 #endif
 
     packetQueued = true;
+    // for (int j = 0; j < sizeof(PayloadData); j++)
+    // {
+    //     Serial.print("0x");
+    //     Serial.print(txBuffer[j], HEX);
+    //     Serial.print(' ');
+    // }
+    // Serial.println(/*(int)&txBuffer, HEX*/);
 
-    if (!buildPacket(txBuffer))
+    if (!buildPacket())
         return false;
 
-    ttn_send(txBuffer, sizeof(txBuffer), LORAWAN_PORT, confirmed);
+    for (int j = 0; j < sizeof(PayloadData); j++)
+    {
+        Serial.print("0x");
+        Serial.print(txBuffer[j], HEX);
+        Serial.print(' ');
+    }
+    Serial.println();
+    ttn_send(txBuffer, sizeof(PayloadData), LORAWAN_PORT, confirmed);
     DEBUG_PORT.println("Sending packet...");
     return true;
 }
