@@ -3,6 +3,8 @@
 #include "TTNNode.h"
 #include <Adafruit_Sensor.h>
 #include "Adafruit_BME680.h"
+#include "esp_wifi.h"
+#include "esp_bt.h"
 
 //unsigned long nextSendTime = SEND_INTERVAL;
 bool transmitComplete = false;
@@ -14,6 +16,32 @@ Adafruit_BME680 bme(&Wire); // I2C
 void setup()
 {
   Serial.begin(115200);
+
+#pragma region DisableWifiBT
+
+  if (esp_wifi_deinit() != ESP_OK)
+    Serial.println("Disabling wifi failed, already disabled?");
+
+  Serial.print("Bluetooth mode status: ");
+  switch (esp_bt_controller_get_status())
+  {
+    case ESP_BT_CONTROLLER_STATUS_IDLE:
+      Serial.println("IDLE");
+      break;
+    case ESP_BT_CONTROLLER_STATUS_INITED:
+      Serial.println("INITED");
+      break;
+    case ESP_BT_CONTROLLER_STATUS_ENABLED:
+      Serial.println("ENABLED");
+      break;
+    default:
+      Serial.println("UNKNOWN");
+      break;
+  }
+
+  if (esp_bt_controller_disable() != ESP_OK)
+    Serial.println("Failed to turn off Bluetooth");
+#pragma endregion
 
   esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
   if (isDeepSleepWakeCause(wakeup_reason))
@@ -39,15 +67,15 @@ void setup()
   if (!bme.setGasHeater(320, 150)) // 320*C for 150 ms
     sendError(ERROR::ERR_BME_HEATER_FAIL);
 
-  pinMode(PH_PIN, INPUT);
-  pinMode(DO_PIN, INPUT);
+  // pinMode(PH_PIN, INPUT);
+  // pinMode(DO_PIN, INPUT);
   pinMode(A0, INPUT);
 
   TTNNode::update();
 
   if (!bme.performReading())
   {
-    Serial.println("Reading BME680 failed! skipping");
+    // Serial.println("Reading BME680 failed! skipping");
     sendError(ERROR::ERR_BME_CONN_FAIL);
     return;
   }
@@ -60,9 +88,9 @@ void loop()
 
   if (transmitComplete)
   {
-    unsigned long long sleepTime = (sentError ? REBOOT_SLEEP_TIME_MS : SEND_INTERVAL) * 1000ULL;
+    unsigned long long sleepTime = (sentError ? ERROR_SLEEP_TIME : SEND_INTERVAL) * 1000ULL;
     transmitComplete = sentError = false;
-    delay(100); //TODO: remove with preprocessor directives its here to allow serial to flush before sleeping
+    //delay(100); //TODO: remove with preprocessor directives its here to allow serial to flush before sleeping
     sleepFor(sleepTime, true); //will restart after
   }
   
@@ -121,7 +149,7 @@ void sendMessage()
   Serial.print(altitude);
   Serial.println(F(" m"));
 
-  float battery_V =(float)analogRead(A0)/3661.922727272727*4.2;
+  float battery_V =(float)multiSampleAnalogRead(A0, 5)/3661.922727272727*4.2;
   //float battery_V =map((float)analogRead(A0),0,3662.0,0.0,4.2);
   Serial.print(F("Approx. voltage = "));
   Serial.print(battery_V);
@@ -159,6 +187,14 @@ void sendError(ERROR error)
   uint8_t* buffer = const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(msg));
   sentError = true;
   TTNNode::send(buffer, strlen(msg), (uint8_t)ERROR_PORT);
+}
+
+int multiSampleAnalogRead(uint8_t pin, uint8_t samples)
+{
+  int total = 0;
+  for (size_t i = 0; i < samples; i++)
+    total += analogRead(pin);
+  return total / samples;
 }
 
 void lmicCallback(uint8_t message)

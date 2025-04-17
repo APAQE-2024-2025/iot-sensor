@@ -1,0 +1,3 @@
+[submodule "TTNNodeLibTest/lib/libTTNNode"]
+	path = TTNNodeLibTest/lib/libTTNNode
+	url = https://github.com/APAQE-2024-2025/libTTNNode.git
