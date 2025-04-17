@@ -1,4 +1,4 @@
 .pio/build/firebeetle32/FrameworkArduino/USBMSC.cpp.o: \
- C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/cores/esp32/USBMSC.cpp \
- C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/cores/esp32/USBMSC.h \
- C:/Users/mathi/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/dio_qspi/include/sdkconfig.h
+ C:/Users/sande/.platformio/packages/framework-arduinoespressif32/cores/esp32/USBMSC.cpp \
+ C:/Users/sande/.platformio/packages/framework-arduinoespressif32/cores/esp32/USBMSC.h \
+ C:/Users/sande/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/dio_qspi/include/sdkconfig.h

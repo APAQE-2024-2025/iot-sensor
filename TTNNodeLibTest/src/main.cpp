@@ -41,6 +41,7 @@ void setup()
 
   pinMode(PH_PIN, INPUT);
   pinMode(DO_PIN, INPUT);
+  pinMode(A0, INPUT);
 
   TTNNode::update();
 
@@ -120,12 +121,18 @@ void sendMessage()
   Serial.print(altitude);
   Serial.println(F(" m"));
 
+  float battery_V =(float)analogRead(A0)/3661.922727272727*4.2;
+  //float battery_V =map((float)analogRead(A0),0,3662.0,0.0,4.2);
+  Serial.print(F("Approx. voltage = "));
+  Serial.print(battery_V);
+  Serial.println(F(" V"));
   PayloadData payload;
   payload.temperature = temperature;
   payload.pressure = pressure;
   payload.humidity = humidity;
   payload.gasResistance = gasResistance;
   payload.altitude = altitude;
+  payload.battery_V = battery_V;
   //payload.ph = analogRead(PH_PIN); // TODO: calibrate better :)
 
   // int rawDO = analogRead(DO_PIN);

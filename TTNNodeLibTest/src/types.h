@@ -17,6 +17,7 @@ struct PayloadData
   float humidity;
   float gasResistance;
   float altitude;
+  float battery_V;
   //float ph;
   //float doValue;
   //float seaLevel;
