@@ -12,6 +12,7 @@
 #define ERROR_PORT 69
 #define ERROR_SLEEP_TIME 1200000ULL //20min
 #define MAX_BME680_READ_TIME 200000UL //20sec 
+#define DISABLE_SLEEP false
 
 // ----- Settings for the DO sensor -----
 // #define DO_PIN A1    // Analog pin for the DO sensor
@@ -46,6 +47,7 @@ inline const char* ERROR_MSG[] =
   "Failed to start BME680 heater, won't send ironious data!",
   "Connection to BME680 failed, check wiring!",
   "Help I'm scared i can't sleep! (sleep rejected)"
+  "Reading BME680 timed out, probably bad connection!"
 };
 
 //Error code + 5 = error message

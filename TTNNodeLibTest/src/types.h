@@ -5,11 +5,12 @@
 // Update ERROR_MSG in main.h if changing this
 enum ERROR
 {
-  ERR_BME_INIT_FAIL = 0,
-  ERR_BME_SET_PROP_FAIL = 1,
-  ERR_BME_HEATER_FAIL = 2,
-  ERR_BME_CONN_FAIL = 3,
-  ERR_INSOMNIA = 4
+  ERR_BME_INIT_FAIL = 0, //not really used anymore
+  ERR_BME_SET_PROP_FAIL = 1, //not really used anymore
+  ERR_BME_HEATER_FAIL = 2, //not really used anymore
+  ERR_BME_CONN_FAIL = 3, //not really used anymore
+  ERR_INSOMNIA = 4,
+  ERR_BME_TIMEOUT = 5
 };
 
 struct PayloadData

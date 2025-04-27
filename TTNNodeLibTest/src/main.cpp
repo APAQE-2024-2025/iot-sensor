@@ -9,7 +9,6 @@
 // unsigned long nextSendTime = SEND_INTERVAL;
 bool transmitComplete = false;
 bool sentError = false;
-bool disableSleep = false;
 
 void setup()
 {
@@ -47,8 +46,15 @@ void setup()
 
     TTNNode::lmic_callbacks.push_back(lmicCallback);
     bool setupSuccess = TTNNode::begin();
-    Serial.println(setupSuccess ? "Setup success :)" : "Setup failed :(");
-
+    if (setupSuccess)
+    {
+        Serial.println("Setup failed :(");
+        sleepFor(SEND_INTERVAL * 1000ULL, true);
+        ESP.restart(); //unreachable, but just a catch-all
+    }
+    
+    Serial.println("Setup success :)");
+    
     bme680Begin();
 
     bme680Subscribe();
@@ -181,21 +187,18 @@ void lmicCallback(uint8_t message)
 
 bool sleepFor(unsigned long long us, bool deepSleep)
 {
-    if (disableSleep)
-    {
-        disableSleep = false;
-        delayMicroseconds(us);
-        if (deepSleep)
-            ESP.restart();
-        return true;
-    }
+#if DISABLE_SLEEP
+    delayMicroseconds(us);
+    if (deepSleep)
+        ESP.restart();
+    return true;
+#endif
 
     bool success = true;
     success = ESP_OK == esp_sleep_enable_timer_wakeup(us);
     if (deepSleep)
         esp_deep_sleep_start();
     success = ESP_OK == esp_light_sleep_start();
-    // disableSleep = !success;
 
     if (!success)
         sendError(3, ERROR_MSG[(int)ERROR::ERR_INSOMNIA]);

@@ -48,9 +48,16 @@ PayloadData readPayload()
 {
     PayloadData payload;
     unsigned long startTime = millis();
+    bool timeout = false;
 
-    while (millis() - startTime < MAX_BME680_READ_TIME)
+    while (true)
     {
+        if (millis() - startTime >= MAX_BME680_READ_TIME)
+        {
+            timeout = true;
+            break;
+        }
+
         if (bme.run())
         {
             payload.airQualityIndex = bme.iaq;
@@ -71,9 +78,15 @@ PayloadData readPayload()
         }
         else
         {
-            sleepFor(1000000, false);
+            sleepFor(100000, false);
         }
     }
+
+    if (timeout)
+    {
+        sendError(4, ERROR_MSG[(int)ERROR::ERR_BME_TIMEOUT]);
+    }
+    
 }
 
 BME680_Status checkSensorStatus()
