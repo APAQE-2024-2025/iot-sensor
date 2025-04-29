@@ -9,6 +9,7 @@
 // unsigned long nextSendTime = SEND_INTERVAL;
 bool transmitComplete = false;
 bool sentError = false;
+bool bmeCooked = false;
 
 void setup()
 {
@@ -40,13 +41,20 @@ void setup()
         Serial.println("Failed to turn off Bluetooth");
 #pragma endregion
 
+    loadState();
+    // pinMode(PH_PIN, INPUT);
+    // pinMode(DO_PIN, INPUT);
+    pinMode(A0, INPUT);
+    pinMode(BME_PWR_PIN, OUTPUT);
+    digitalWrite(BME_PWR_PIN, true); 
+
     esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
     if (isDeepSleepWakeCause(wakeup_reason))
         Serial.println("Awoke from deep sleep!");
 
     TTNNode::lmic_callbacks.push_back(lmicCallback);
     bool setupSuccess = TTNNode::begin();
-    if (setupSuccess)
+    if (!setupSuccess)
     {
         Serial.println("Setup failed :(");
         sleepFor(SEND_INTERVAL * 1000ULL, true);
@@ -55,17 +63,21 @@ void setup()
     
     Serial.println("Setup success :)");
     
-    bme680Begin();
-
-    bme680Subscribe();
-    
-
-    // pinMode(PH_PIN, INPUT);
-    // pinMode(DO_PIN, INPUT);
-    pinMode(A0, INPUT);
-
     TTNNode::update();
 
+    //skip to loop
+    if (!bme680Begin())
+    {
+        bmeCooked = true;
+        return;
+    }
+
+    if (!bme680Subscribe())
+    {
+        bmeCooked = true;
+        return;
+    }
+    
     sendMessage();
 }
 
@@ -109,8 +121,14 @@ bool isDeepSleepWakeCause(esp_sleep_wakeup_cause_t reason)
 }
 
 void sendMessage()
-{
-    PayloadData payload = readPayload();
+{   
+    PayloadDataFull payload = readPayload();
+
+    // if (payload == nullptr) //TODO
+    // {
+        
+    // }
+
     Serial.print(F("Temperature = "));
     Serial.print(payload.temperature);
     Serial.println(F(" *C"));
@@ -127,12 +145,37 @@ void sendMessage()
     Serial.print(F("IAQ = "));
     Serial.println(payload.airQualityIndex);
 
+    Serial.print(F("CO2 = "));
+    Serial.print(payload.co2Eq);
+    Serial.println(F(" ppm"));
+
     float batteryVoltage = (float)multiSampleAnalogRead(A0, 20) / 3661.922727272727 * 4.2;
     payload.batteryVoltage = batteryVoltage;
 
     Serial.print(F("Approx. voltage = "));
     Serial.print(batteryVoltage);
     Serial.println(F(" V"));
+
+    if (!payload.runInStatus)
+    {
+        Serial.println("Sending small message...");
+        PayloadData* trimmed = reinterpret_cast<PayloadData*>(&payload);
+        (*trimmed).flags = 0;
+
+        if(TTNNode::send<PayloadData>(*trimmed, DATA_PORT))
+        {
+            sendError(5 ,ERROR_MSG[(int)ERROR::ERR_LORA_SEND_FAIL]);
+        }
+        return;
+    }
+
+    payload.flags |= PayloadFlags::PAYLOAD_FULL;
+    Serial.println("Sending full size message :)");
+
+    if(TTNNode::send<PayloadDataFull>(payload, DATA_PORT))
+    {
+        sendError(5 ,ERROR_MSG[(int)ERROR::ERR_LORA_SEND_FAIL]);
+    }
     // payload.ph = analogRead(PH_PIN); // TODO: calibrate better :)
 
     // int rawDO = analogRead(DO_PIN);
@@ -148,11 +191,7 @@ void sendMessage()
     // // The ratio of measured voltage to calibration voltage gives the saturation fraction,
     // // multiplied by the saturation value yields the DO concentration.
     // payload.doValue = (voltage / CAL1_v) * saturation;
-
-    TTNNode::send<PayloadData>(payload, DATA_PORT);
 }
-
-#include <string>
 
 void sendError(int idNum, const char *msg)
 {
@@ -165,7 +204,12 @@ void sendError(int idNum, const char *msg)
     );
 
     sentError = true;
-    TTNNode::send(buffer, fullMsg.length(), (uint8_t)ERROR_PORT);
+    
+    if (TTNNode::send(buffer, fullMsg.length(), (uint8_t)ERROR_PORT)) //true if error
+    {
+        sleepFor(ERROR_SLEEP_TIME * 1000ULL, true);
+        ESP.restart(); //unreachable, but catch-all
+    }
 }
 
 
@@ -197,7 +241,12 @@ bool sleepFor(unsigned long long us, bool deepSleep)
     bool success = true;
     success = ESP_OK == esp_sleep_enable_timer_wakeup(us);
     if (deepSleep)
+    {
+        if (!bmeCooked) saveState();
+        digitalWrite(BME_PWR_PIN, false);
         esp_deep_sleep_start();
+    }
+        
     success = ESP_OK == esp_light_sleep_start();
 
     if (!success)

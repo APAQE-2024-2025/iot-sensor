@@ -4,57 +4,82 @@
 #include "types.h"
 
 Bsec bme;
+RTC_DATA_ATTR uint8_t bsecState[BSEC_MAX_STATE_BLOB_SIZE] = {0};
+RTC_DATA_ATTR bool hasState = false;
+
+bool loadState()
+{
+    if (!hasState)
+    {
+        Serial.println("No state loaded");
+    }    
+    bme.setState(bsecState);
+    return checkAndSendBmeError(6);
+}
+
+bool saveState()
+{
+    Serial.println("Saving state...");
+    hasState = true;   
+    bme.getState(bsecState);
+    return checkAndSendBmeError(7);
+}
 
 bool bme680Begin()
 {
-    bme.begin(BME68X_I2C_ADDR_LOW, Wire);
-    checkAndSendBmeError(1);
-
-    return true;
+    digitalWrite(BME_PWR_PIN, true);
+    delay(10); //let power stabilize
+    bme.begin(BME68X_I2C_ADDR_HIGH, Wire);
+    return checkAndSendBmeError(1);
 }
 
-void bme680Subscribe()
+bool bme680Subscribe()
 {
     bsec_virtual_sensor_t sensorList[13] =
-        {
-            BSEC_OUTPUT_IAQ,
-            BSEC_OUTPUT_STATIC_IAQ,
-            BSEC_OUTPUT_CO2_EQUIVALENT,
-            BSEC_OUTPUT_BREATH_VOC_EQUIVALENT,
-            BSEC_OUTPUT_RAW_TEMPERATURE,
-            BSEC_OUTPUT_RAW_PRESSURE,
-            BSEC_OUTPUT_RAW_HUMIDITY,
-            BSEC_OUTPUT_RAW_GAS,
-            BSEC_OUTPUT_STABILIZATION_STATUS,
-            BSEC_OUTPUT_RUN_IN_STATUS,
-            BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_TEMPERATURE,
-            BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_HUMIDITY,
-            BSEC_OUTPUT_GAS_PERCENTAGE};
+    {
+        BSEC_OUTPUT_IAQ,
+        BSEC_OUTPUT_STATIC_IAQ,
+        BSEC_OUTPUT_CO2_EQUIVALENT,
+        BSEC_OUTPUT_BREATH_VOC_EQUIVALENT,
+        BSEC_OUTPUT_RAW_TEMPERATURE,
+        BSEC_OUTPUT_RAW_PRESSURE,
+        BSEC_OUTPUT_RAW_HUMIDITY,
+        BSEC_OUTPUT_RAW_GAS,
+        BSEC_OUTPUT_STABILIZATION_STATUS,
+        BSEC_OUTPUT_RUN_IN_STATUS,
+        BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_TEMPERATURE,
+        BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_HUMIDITY,
+        BSEC_OUTPUT_GAS_PERCENTAGE
+    };
 
-    bme.updateSubscription(sensorList, 13, BSEC_SAMPLE_RATE_LP);
-    checkAndSendBmeError(2);
+    bme.updateSubscription(sensorList, 13, BSEC_SAMPLE_RATE_CONT);
+    return checkAndSendBmeError(2);
 }
 
-void checkAndSendBmeError(int idNum)
+bool checkAndSendBmeError(int idNum)
 {
     BME680_Status status = checkSensorStatus();
-    if (!status.success)
+    bool success = status.success;
+    if (!success)
     {
         sendError(idNum, status.errorMsg);
     }
+    return success;
 }
 
-PayloadData readPayload()
+PayloadDataFull readPayload()
 {
-    PayloadData payload;
+    int timeout = 0;
+    PayloadDataFull payload;
+    Retry:
     unsigned long startTime = millis();
-    bool timeout = false;
+    
 
     while (true)
     {
         if (millis() - startTime >= MAX_BME680_READ_TIME)
         {
-            timeout = true;
+            timeout++;
             break;
         }
 
@@ -66,7 +91,7 @@ PayloadData readPayload()
             payload.co2Eq = bme.co2Equivalent;
             payload.voc = bme.breathVocEquivalent;
             payload.rawTemp = bme.rawTemperature;
-            payload.pressure = bme.pressure;
+            payload.pressure = bme.pressure / 100.0;
             payload.rawHumidity = bme.rawHumidity;
             payload.rawGasResistance = bme.gasResistance;
             payload.stabilizationStatus = bme.stabStatus;
@@ -82,11 +107,22 @@ PayloadData readPayload()
         }
     }
 
+    if (timeout < 2)
+    {
+        digitalWrite(BME_PWR_PIN, false);
+        delay(100);
+        bme680Begin();
+        bme680Subscribe();
+        delay(100);
+        goto Retry;
+    } 
+
     if (timeout)
     {
         sendError(4, ERROR_MSG[(int)ERROR::ERR_BME_TIMEOUT]);
     }
-    
+
+    return payload;
 }
 
 BME680_Status checkSensorStatus()

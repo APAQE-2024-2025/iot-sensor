@@ -10,25 +10,52 @@ enum ERROR
   ERR_BME_HEATER_FAIL = 2, //not really used anymore
   ERR_BME_CONN_FAIL = 3, //not really used anymore
   ERR_INSOMNIA = 4,
-  ERR_BME_TIMEOUT = 5
+  ERR_BME_TIMEOUT = 5,
+  ERR_LORA_SEND_FAIL = 6
 };
 
-struct PayloadData
+enum PayloadFlags
 {
-  float airQualityIndex;
-  float airQualityIndexAccuracy;
-  float staticAirQualityIndex;
-  float co2Eq;
-  float voc;
-  float rawTemp;
+  PAYLOAD_FULL = 0b00000001
+};
+
+//BOTH STRUCTS HAVE TO BE THE SAME UP UNTIL THE "additional data" PART!!!
+#pragma pack(1)
+struct PayloadDataFull
+{
+  uint8_t flags = PayloadFlags::PAYLOAD_FULL;
   float pressure;
   float rawHumidity;
   float rawGasResistance;
   float stabilizationStatus;
   float runInStatus;
+  float rawTemp;
+  float batteryVoltage;
+
+  //additional data
+  float airQualityIndex;
+  float airQualityIndexAccuracy;
+  float staticAirQualityIndex;
+  float co2Eq;
+  float voc;
+  float gasPercentage;
   float temperature;
   float humidity;
-  float gasPercentage;
+  // float ph;
+  // float doValue;
+  // float seaLevel;
+};
+
+#pragma pack(1)
+struct PayloadData
+{
+  uint8_t flags = 0;
+  float pressure;
+  float humidity;
+  float gasResistance;
+  float stabilizationStatus;
+  float runInStatus;
+  float temperature;
   float batteryVoltage;
   // float ph;
   // float doValue;

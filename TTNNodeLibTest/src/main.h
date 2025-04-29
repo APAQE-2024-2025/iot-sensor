@@ -7,12 +7,13 @@
 #include "bsec.h"
 
 // CONFIG
-#define SEND_INTERVAL 300000ULL
+#define SEND_INTERVAL 300000ULL //5min
 #define DATA_PORT 10
 #define ERROR_PORT 69
 #define ERROR_SLEEP_TIME 1200000ULL //20min
 #define MAX_BME680_READ_TIME 200000UL //20sec 
 #define DISABLE_SLEEP false
+#define BME_PWR_PIN D8
 
 // ----- Settings for the DO sensor -----
 // #define DO_PIN A1    // Analog pin for the DO sensor
@@ -46,8 +47,9 @@ inline const char* ERROR_MSG[] =
   "Failed to set property on BME680, check wiring!",
   "Failed to start BME680 heater, won't send ironious data!",
   "Connection to BME680 failed, check wiring!",
-  "Help I'm scared i can't sleep! (sleep rejected)"
-  "Reading BME680 timed out, probably bad connection!"
+  "Help I'm scared i can't sleep! (sleep rejected)",
+  "Reading BME680 timed out, probably bad connection!",
+  "Failed to send data, probably LoRa hardware issue, maybe TTN"
 };
 
 //Error code + 5 = error message
@@ -86,15 +88,21 @@ int multiSampleAnalogRead(uint8_t pin, uint8_t samples);
 
 //bme680.cpp
 extern Bsec bme;
+// extern RTC_DATA_ATTR bool hasState;
+// extern RTC_DATA_ATTR uint8_t bsecState[BSEC_MAX_STATE_BLOB_SIZE];
 
 bool bme680Begin();
 
 BME680_Status checkSensorStatus();
 
-PayloadData readPayload();
+PayloadDataFull readPayload();
 
-void checkAndSendBmeError(int idNum);
+bool checkAndSendBmeError(int idNum);
 
-void bme680Subscribe();
+bool bme680Subscribe();
+
+bool saveState();
+
+bool loadState();
 
 #endif
