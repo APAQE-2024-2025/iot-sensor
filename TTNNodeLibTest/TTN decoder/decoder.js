@@ -171,6 +171,11 @@ function Decoder(bytes, port)
     [
         ...decode.measurements,
         {
+            name: "VOC",
+            value: (voc = guestimateVoc(gasResistance, humidity, temperature)),
+            description: "[ppb] Estimated absolute VOC levels"            
+        },
+        {
             name: "WeatherVibes",
             value: getWeatherVibes(pressure, humidity, temperature),
             description: "[0-5] A measure of how comfortable the weather is where 0 is probable rain/colder/harsher and 5 is nice humidity/temperature and low chance of rain"
@@ -184,11 +189,6 @@ function Decoder(bytes, port)
             name: "AbsoluteHumidity",
             value: getAbsoluteHumidity(temperature, humidity, pressure),
             description: "[g/m³] Absolute humidity (the actual quantity of water in the air, not relative)"
-        },
-        {
-            name: "VOC",
-            value: (voc = guestimateVoc(gasResistance, humidity, temperature)),
-            description: "[ppb] Estimated absolute VOC levels"            
         }
     ];
 

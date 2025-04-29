@@ -236,13 +236,12 @@ bool sleepFor(unsigned long long us, bool deepSleep)
     if (deepSleep)
         ESP.restart();
     return true;
-#endif
-
+#else
+    if (!bmeCooked) saveState();
     bool success = true;
     success = ESP_OK == esp_sleep_enable_timer_wakeup(us);
     if (deepSleep)
     {
-        if (!bmeCooked) saveState();
         digitalWrite(BME_PWR_PIN, false);
         esp_deep_sleep_start();
     }
@@ -253,6 +252,7 @@ bool sleepFor(unsigned long long us, bool deepSleep)
         sendError(3, ERROR_MSG[(int)ERROR::ERR_INSOMNIA]);
 
     return success;
+#endif
 }
 
 // Here for if i ever need it again
